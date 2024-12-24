@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+  <title>Custom TikTok Login</title>
+
+  <style>
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: #f0f2f5;
+    }
+
+    .login-container {
+      max-width: 400px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, .1), 0 8px 16px rgba(0, 0, 0, .1);
+      font-weight: bold;
+      font-size: 20px;
+      text-align: center;
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .tiktok-button {
+      margin-top: 20px;
+      padding: 15px;
+      background: #000;
+      color: #fff;
+      border-radius: 5px;
+      font-size: 18px;
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    .tiktok-button:hover {
+      background: #333;
+    }
+
+    .tiktok-button img {
+      height: 20px;
+      margin-right: 10px;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h1>Connect Your TikTok Account</h1>
+    <div id="login-area">
+      <div class="tiktok-button" id="tiktok-login">
+        Continue with TikTok
+      </div>
+    </div>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    // Replace these with your TikTok app credentials
+    const CLIENT_KEY = "awqqcgbz0pmlj9cz";
+    const CLIENT_SECRET = "GKW4KrxisbiDOKtiqkcFCVBusMc0POAO";
+    const REDIRECT_URI = "http://slopbuckettiktok.s3-website-us-east-1.amazonaws.com";
+
+    // When the user clicks the login button, redirect to TikTok's OAuth URL
+    document.getElementById("tiktok-login").addEventListener("click", () => {
+      const authUrl = `https://www.tiktok.com/auth/authorize/` +
+                      `?client_key=${CLIENT_KEY}` +
+                      `&response_type=code` +
+                      `&scope=user.info.basic,video.upload` +
+                      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+                      `&state=state_token`;
+
+      window.location.href = authUrl;
+    });
+
+    // Extract the authorization code from the URL
+    const queryParams = new URLSearchParams(window.location.search);
+    const code = queryParams.get("code");
+
+    if (code) {
+      document.getElementById("result").innerText = "Authorization Code: " + code;
+      
+      // Exchange the code for an access token
+      getAccessToken(code);
+    }
+
+    // Function to exchange the authorization code for an access token
+    async function getAccessToken(authCode) {
+      const tokenEndpoint = "https://open-api.tiktok.com/oauth/access_token/";
+
+      try {
+        const response = await fetch(tokenEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            client_key: CLIENT_KEY,
+            client_secret: CLIENT_SECRET,
+            code: authCode,
+            grant_type: "authorization_code"
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.access_token) {
+          document.getElementById("result").innerText = 
+            `Access Token: ${data.access_token}`;
+        } else {
+          document.getElementById("result").innerText = 
+            "Failed to retrieve access token.";
+        }
+      } catch (error) {
+        document.getElementById("result").innerText =
+          `Error: ${error.message}`;
+      }
+    }
+  </script>
+</body>
+</html>
