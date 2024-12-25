@@ -2,129 +2,96 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-  <title>Custom TikTok Login</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OAuth Authorization Flow</title>
   <style>
     body {
-      font-family: 'Courier New', Courier, monospace;
-      background: #f0f2f5;
-    }
-
-    .login-container {
-      max-width: 400px;
-      background: #fff;
-      padding: 20px;
-      border-radius: 5px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, .1), 0 8px 16px rgba(0, 0, 0, .1);
-      font-weight: bold;
-      font-size: 20px;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
       text-align: center;
-      position: fixed;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
+      margin-top: 50px;
     }
-
-    .tiktok-button {
-      margin-top: 20px;
-      padding: 15px;
-      background: #000;
-      color: #fff;
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #1DA1F2;
+      color: white;
+      border: none;
       border-radius: 5px;
-      font-size: 18px;
+      font-size: 16px;
       cursor: pointer;
-      display: inline-block;
     }
-
-    .tiktok-button:hover {
-      background: #333;
+    button:hover {
+      background-color: #0d8bdc;
     }
-
-    .tiktok-button img {
-      height: 20px;
-      margin-right: 10px;
-    }
-
-    #result {
+    .result {
       margin-top: 20px;
       font-size: 14px;
+      color: #555;
     }
   </style>
 </head>
 <body>
-  <div class="login-container">
-    <h1>Connect Your TikTok Account</h1>
-    <div id="login-area">
-      <div class="tiktok-button" id="tiktok-login">
-        Continue with TikTok
-      </div>
-    </div>
-    <div id="result"></div>
+  <div class="container">
+    <h1>Authorize with TikTok</h1>
+    <p>Click the button below to log in with TikTok:</p>
+    <button id="login-btn">Login with TikTok</button>
+    <div class="result" id="result"></div>
   </div>
 
   <script>
-    // Replace these with your TikTok app credentials
+    // Your TikTok app credentials (WARNING: Do NOT expose these in production)
     const CLIENT_KEY = "sbaw4ff0tqzv760s65";
-    const CLIENT_SECRET = "ZYowkiLhygczI3oWNIhBH2HjDb20AhLf";
-    const REDIRECT_URI = "https://chris-messer.github.io/tiktokapp/";
+    const CLIENT_SECRET = "ZYowkiLhygczI3oWNIhBH2HjDb20AhLf"; // Do NOT expose in production
+    const REDIRECT_URI = "https://chris-messer.github.io/tiktokapp/"; // Replace with the URL of this page
 
-    // When the user clicks the login button, redirect to TikTok's OAuth URL
-    document.getElementById("tiktok-login").addEventListener("click", () => {
-      const authUrl = `https://www.tiktok.com/auth/authorize/` +
-                      `?client_key=${CLIENT_KEY}` +
-                      `&response_type=code` +
-                      `&scope=user.info.basic,video.upload` +
-                      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-                      `&state=state_token`;
+    const AUTHORIZE_URL = "https://www.tiktok.com/auth/authorize/";
+    const TOKEN_URL = "https://open-api.tiktok.com/oauth/access_token/";
 
-      window.location.href = authUrl;
+    // Step 1: Handle the login button click
+    document.getElementById("login-btn").addEventListener("click", () => {
+      const authUrl = `${AUTHORIZE_URL}?client_key=${CLIENT_KEY}&response_type=code&scope=user.info.basic,video.upload&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=random_state_string`;
+      window.location.href = authUrl; // Redirect user to TikTok login page
     });
 
-    // Extract the authorization code from the URL
+    // Step 2: Handle TikTok's redirection back to this page
     const queryParams = new URLSearchParams(window.location.search);
     const code = queryParams.get("code");
 
     if (code) {
-      document.getElementById("result").innerText = "Authorization Code: " + code;
-      
+      document.getElementById("result").innerText = `Authorization Code: ${code}`;
       // Exchange the code for an access token
-      getAccessToken(code);
+      exchangeCodeForAccessToken(code);
+    } else if (queryParams.get("error")) {
+      document.getElementById("result").innerText = `Error: ${queryParams.get("error_description") || "Authorization failed."}`;
     }
 
-    // Function to exchange the authorization code for an access token
-    async function getAccessToken(authCode) {
-      const tokenEndpoint = "https://open-api.tiktok.com/oauth/access_token/";
+    // Step 3: Exchange Authorization Code for Access Token
+    async function exchangeCodeForAccessToken(authCode) {
+      const response = await fetch(TOKEN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_key: CLIENT_KEY,
+          client_secret: CLIENT_SECRET,
+          code: authCode,
+          grant_type: "authorization_code",
+          redirect_uri: REDIRECT_URI,
+        }),
+      });
 
-      try {
-        const response = await fetch(tokenEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            client_key: CLIENT_KEY,
-            client_secret: CLIENT_SECRET,
-            code: authCode,
-            grant_type: "authorization_code"
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        if (data.access_token) {
-          document.getElementById("result").innerText = 
-            `Access Token: ${data.access_token}`;
-        } else {
-          document.getElementById("result").innerText = 
-            "Failed to retrieve access token.";
-        }
-      } catch (error) {
-        document.getElementById("result").innerText =
-          `Error: ${error.message}`;
+      const data = await response.json();
+      if (data.access_token) {
+        document.getElementById("result").innerText = `Access Token: ${data.access_token}`;
+      } else {
+        document.getElementById("result").innerText = `Failed to retrieve access token: ${JSON.stringify(data)}`;
       }
     }
   </script>
