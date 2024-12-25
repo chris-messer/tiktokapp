@@ -50,7 +50,7 @@
     // Your TikTok app credentials (WARNING: Do NOT expose these in production)
     const CLIENT_KEY = "sbaw4ff0tqzv760s65";
     const CLIENT_SECRET = "ZYowkiLhygczI3oWNIhBH2HjDb20AhLf"; // Do NOT expose in production
-    const REDIRECT_URI = "https://chris-messer.github.io/tiktokapp/"; // Replace with the URL of this page
+    const REDIRECT_URI = "https://chris-messer.github.io/tiktokapp/index.html"; // Replace with the URL of this page
 
     const AUTHORIZE_URL = "https://www.tiktok.com/auth/authorize/";
     const TOKEN_URL = "https://open-api.tiktok.com/oauth/access_token/";
@@ -58,6 +58,7 @@
     // Step 1: Handle the login button click
     document.getElementById("login-btn").addEventListener("click", () => {
       const authUrl = `${AUTHORIZE_URL}?client_key=${CLIENT_KEY}&response_type=code&scope=user.info.basic,video.upload&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=random_state_string`;
+      console.log(authUrl);
       window.location.href = authUrl; // Redirect user to TikTok login page
     });
 
