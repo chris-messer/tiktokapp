@@ -30,15 +30,49 @@
             return urlParams.get(param);
         }
 
-        // Function to handle authorization code display
-        function handleAuthCode() {
+        // Function to handle authorization code and exchange for access token
+        async function handleAuthCode() {
             const code = getQueryParam('code'); // Extract the 'code' parameter
             const state = getQueryParam('state'); // Extract the 'state' parameter
 
             if (code) {
-                // Display the authorization code and state on the page
+                // Display the authorization code for debugging
                 document.getElementById('authCode').textContent = `Authorization Code: ${code}`;
                 document.getElementById('state').textContent = `State: ${state}`;
+
+                // Exchange authorization code for access token
+                const tokenEndpoint = 'https://open.tiktokapis.com/v2/oauth/token/';
+                const clientKey = 'YOUR_CLIENT_KEY'; // Replace with your TikTok Client Key
+                const clientSecret = 'YOUR_CLIENT_SECRET'; // Replace with your TikTok Client Secret
+                const redirectUri = window.location.href;
+
+                try {
+                    const response = await fetch(tokenEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            client_key: clientKey,
+                            client_secret: clientSecret,
+                            grant_type: 'authorization_code',
+                            code: code,
+                            redirect_uri: redirectUri,
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    // Display access and refresh tokens for debugging
+                    document.getElementById('accessToken').textContent = `Access Token: ${data.access_token}`;
+                    document.getElementById('refreshToken').textContent = `Refresh Token: ${data.refresh_token}`;
+                } catch (error) {
+                    document.getElementById('error').textContent = `Error: ${error.message}`;
+                }
             } else {
                 document.getElementById('authCode').textContent = 'No authorization code received.';
             }
@@ -49,9 +83,12 @@
     </script>
 </head>
 <body>
-    <h1>Log in with TikTok</h1>
+    <h1>Log in with TikTok - Debug Mode</h1>
     <button onclick="loginWithTikTok()">Login with TikTok</button>
     <p id="authCode"></p>
     <p id="state"></p>
+    <p id="accessToken"></p>
+    <p id="refreshToken"></p>
+    <p id="error" style="color: red;"></p>
 </body>
 </html>
