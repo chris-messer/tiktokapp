@@ -9,7 +9,7 @@
         function loginWithTikTok() {
             const clientKey = 'sbaw4ff0tqzv760s65'; // Replace with your TikTok Client Key
             const redirectUri = encodeURIComponent(window.location.href); // Current page URL
-            const scope = 'user.info.basic,video.upload'; // Adjust scopes based on your needs
+            const scope = 'user.info.basic,video.upload,video.publish'; // Adjust scopes based on your needs
             const state = Math.random().toString(36).substring(2); // Generate random state for CSRF protection
 
             // Construct TikTok authorization URL
