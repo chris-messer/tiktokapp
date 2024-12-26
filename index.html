@@ -1,100 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OAuth Authorization Flow</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      text-align: center;
-      margin-top: 50px;
-    }
-    .container {
-      max-width: 500px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    button {
-      padding: 10px 20px;
-      background-color: #1DA1F2;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0d8bdc;
-    }
-    .result {
-      margin-top: 20px;
-      font-size: 14px;
-      color: #555;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok OAuth Login</title>
+    <script>
+        // Function to initiate TikTok OAuth Login
+        function loginWithTikTok() {
+            const clientKey = 'sbaw4ff0tqzv760s65'; // Replace with your TikTok Client Key
+            const redirectUri = encodeURIComponent(window.location.href); // Current page URL
+            const scope = 'user.info.basic,video.upload'; // Adjust scopes based on your needs
+            const state = Math.random().toString(36).substring(2); // Generate random state for CSRF protection
+
+            // Construct TikTok authorization URL
+            const authUrl = `https://www.tiktok.com/v2/auth/authorize/` +
+                `?client_key=${clientKey}` +
+                `&response_type=code` +
+                `&scope=${scope}` +
+                `&redirect_uri=${redirectUri}` +
+                `&state=${state}`;
+
+            // Redirect to TikTok authorization page
+            window.location.href = authUrl;
+        }
+
+        // Function to extract query parameters from URL
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Function to handle authorization code display
+        function handleAuthCode() {
+            const code = getQueryParam('code'); // Extract the 'code' parameter
+            const state = getQueryParam('state'); // Extract the 'state' parameter
+
+            if (code) {
+                // Display the authorization code and state on the page
+                document.getElementById('authCode').textContent = `Authorization Code: ${code}`;
+                document.getElementById('state').textContent = `State: ${state}`;
+            } else {
+                document.getElementById('authCode').textContent = 'No authorization code received.';
+            }
+        }
+
+        // Execute handleAuthCode when the page loads
+        window.onload = handleAuthCode;
+    </script>
 </head>
 <body>
-  <div class="container">
-    <h1>Authorize with TikTok</h1>
-    <p>Click the button below to log in with TikTok:</p>
-    <button id="login-btn">Login with TikTok</button>
-    <div class="result" id="result"></div>
-  </div>
-
-  <script>
-    // Your TikTok app credentials (WARNING: Do NOT expose these in production)
-    const CLIENT_KEY = "sbaw4ff0tqzv760s65";
-    const CLIENT_SECRET = "ZYowkiLhygczI3oWNIhBH2HjDb20AhLf"; // Do NOT expose in production
-    const REDIRECT_URI = "https://chris-messer.github.io/tiktokapp/index.html"; // Replace with the URL of this page
-
-    const AUTHORIZE_URL = "https://www.tiktok.com/auth/authorize/";
-    const TOKEN_URL = "https://open-api.tiktok.com/oauth/access_token/";
-
-    // Step 1: Handle the login button click
-    document.getElementById("login-btn").addEventListener("click", () => {
-      const authUrl = `${AUTHORIZE_URL}?client_key=${CLIENT_KEY}&response_type=code&scope=user.info.basic,video.upload&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=random_state_string`;
-      console.log(authUrl);
-      window.location.href = authUrl; // Redirect user to TikTok login page
-    });
-
-    // Step 2: Handle TikTok's redirection back to this page
-    const queryParams = new URLSearchParams(window.location.search);
-    const code = queryParams.get("code");
-
-    if (code) {
-      document.getElementById("result").innerText = `Authorization Code: ${code}`;
-      // Exchange the code for an access token
-      exchangeCodeForAccessToken(code);
-    } else if (queryParams.get("error")) {
-      document.getElementById("result").innerText = `Error: ${queryParams.get("error_description") || "Authorization failed."}`;
-    }
-
-    // Step 3: Exchange Authorization Code for Access Token
-    async function exchangeCodeForAccessToken(authCode) {
-      const response = await fetch(TOKEN_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          client_key: CLIENT_KEY,
-          client_secret: CLIENT_SECRET,
-          code: authCode,
-          grant_type: "authorization_code",
-          redirect_uri: REDIRECT_URI,
-        }),
-      });
-
-      const data = await response.json();
-      if (data.access_token) {
-        document.getElementById("result").innerText = `Access Token: ${data.access_token}`;
-      } else {
-        document.getElementById("result").innerText = `Failed to retrieve access token: ${JSON.stringify(data)}`;
-      }
-    }
-  </script>
+    <h1>Log in with TikTok</h1>
+    <button onclick="loginWithTikTok()">Login with TikTok</button>
+    <p id="authCode"></p>
+    <p id="state"></p>
 </body>
 </html>
